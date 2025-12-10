@@ -700,6 +700,24 @@ fn handle_global_command(
                 state: LibraryPageUIState::new(),
             });
         }
+        Command::PlaylistsPage => {
+            ui.new_page(PageState::Playlists {
+                state: crate::state::PlaylistsPageUIState::new(),
+            });
+        }
+        Command::AlbumsPage => {
+            ui.new_page(PageState::Albums {
+                state: crate::state::AlbumsPageUIState::new(),
+            });
+        }
+        Command::ArtistsPage => {
+            ui.new_page(PageState::Artists {
+                state: crate::state::ArtistsPageUIState::new(),
+            });
+        }
+        Command::PlaybackPage => {
+            ui.new_page(PageState::Playback);
+        }
         Command::SearchPage => {
             ui.new_page(PageState::Search {
                 line_input: LineInput::default(),

@@ -30,10 +30,19 @@ pub fn handle_key_sequence_for_page(
             PageType::Lyrics => Ok(false),
             PageType::Queue => Ok(handle_command_for_queue_page(command, ui)),
             PageType::CommandHelp => Ok(handle_command_for_command_help_page(command, ui)),
+            PageType::Playlists => {
+                handle_command_for_playlists_page(command, client_pub, ui, state)
+            }
+            PageType::Albums => handle_command_for_albums_page(command, client_pub, ui, state),
+            PageType::Artists => handle_command_for_artists_page(command, client_pub, ui, state),
+            PageType::Playback => Ok(false),
         },
         Some(CommandOrAction::Action(action, ActionTarget::SelectedItem)) => match page_type {
             PageType::Search => anyhow::bail!("page search type should already be handled!"),
             PageType::Library => handle_action_for_library_page(action, client_pub, ui, state),
+            PageType::Playlists => handle_action_for_playlists_page(action, client_pub, ui, state),
+            PageType::Albums => handle_action_for_albums_page(action, client_pub, ui, state),
+            PageType::Artists => handle_action_for_artists_page(action, client_pub, ui, state),
             PageType::Context => {
                 window::handle_action_for_focused_context_page(action, client_pub, ui, state)
             }
@@ -240,6 +249,132 @@ fn handle_command_for_library_page(
             ))
         }
     }
+}
+
+fn handle_action_for_playlists_page(
+    action: Action,
+    client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    let data = state.data.read();
+    let folder_id = match ui.current_page() {
+        PageState::Playlists { state } => state.folder_id,
+        _ => anyhow::bail!("expect a playlists page state"),
+    };
+    window::handle_action_for_selected_item(
+        action,
+        &ui.search_filtered_items(&data.user_data.folder_playlists_items(folder_id))
+            .into_iter()
+            .copied()
+            .collect::<Vec<_>>(),
+        &data,
+        ui,
+        client_pub,
+    )
+}
+
+fn handle_command_for_playlists_page(
+    command: Command,
+    client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    if command == Command::Search {
+        ui.new_search_popup();
+        return Ok(true);
+    }
+
+    // TODO: support sorting
+
+    let folder_id = match ui.current_page() {
+        PageState::Playlists { state } => state.folder_id,
+        _ => anyhow::bail!("expect a playlists page state"),
+    };
+
+    let data = state.data.read();
+    Ok(window::handle_command_for_playlist_list_window(
+        command,
+        &ui.search_filtered_items(&data.user_data.folder_playlists_items(folder_id))
+            .into_iter()
+            .copied()
+            .collect::<Vec<_>>(),
+        &data,
+        ui,
+    ))
+}
+
+fn handle_action_for_albums_page(
+    action: Action,
+    client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    let data = state.data.read();
+    window::handle_action_for_selected_item(
+        action,
+        &ui.search_filtered_items(&data.user_data.saved_albums),
+        &data,
+        ui,
+        client_pub,
+    )
+}
+
+fn handle_command_for_albums_page(
+    command: Command,
+    client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    if command == Command::Search {
+        ui.new_search_popup();
+        return Ok(true);
+    }
+
+    let data = state.data.read();
+    window::handle_command_for_album_list_window(
+        command,
+        &ui.search_filtered_items(&data.user_data.saved_albums),
+        &data,
+        ui,
+        client_pub,
+    )
+}
+
+fn handle_action_for_artists_page(
+    action: Action,
+    client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    let data = state.data.read();
+    window::handle_action_for_selected_item(
+        action,
+        &ui.search_filtered_items(&data.user_data.followed_artists),
+        &data,
+        ui,
+        client_pub,
+    )
+}
+
+fn handle_command_for_artists_page(
+    command: Command,
+    _client_pub: &flume::Sender<ClientRequest>,
+    ui: &mut UIStateGuard,
+    state: &SharedState,
+) -> Result<bool> {
+    if command == Command::Search {
+        ui.new_search_popup();
+        return Ok(true);
+    }
+
+    let data = state.data.read();
+    Ok(window::handle_command_for_artist_list_window(
+        command,
+        &ui.search_filtered_items(&data.user_data.followed_artists),
+        &data,
+        ui,
+    ))
 }
 
 fn handle_key_sequence_for_search_page(

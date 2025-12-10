@@ -506,6 +506,10 @@ pub fn handle_command_for_playlist_list_window(
                             state.focus = LibraryFocusState::Playlists;
                             state.playlist_folder_id = f.target_id;
                         }
+                        PageState::Playlists { state } => {
+                            state.list.select(Some(0));
+                            state.folder_id = f.target_id;
+                        }
                         _ => return false,
                     }
                 }

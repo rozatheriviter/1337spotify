@@ -23,6 +23,16 @@ pub enum PageState {
     Library {
         state: LibraryPageUIState,
     },
+    Playlists {
+        state: PlaylistsPageUIState,
+    },
+    Albums {
+        state: AlbumsPageUIState,
+    },
+    Artists {
+        state: ArtistsPageUIState,
+    },
+    Playback,
     Context {
         id: Option<ContextId>,
         context_page_type: ContextPageType,
@@ -53,6 +63,10 @@ pub enum PageState {
 pub enum PageType {
     Home,
     Library,
+    Playlists,
+    Albums,
+    Artists,
+    Playback,
     Context,
     Search,
     Browse,
@@ -68,6 +82,47 @@ pub struct LibraryPageUIState {
     pub followed_artist_list: ListState,
     pub focus: LibraryFocusState,
     pub playlist_folder_id: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct PlaylistsPageUIState {
+    pub list: ListState,
+    pub folder_id: usize,
+}
+
+impl PlaylistsPageUIState {
+    pub fn new() -> Self {
+        Self {
+            list: ListState::default(),
+            folder_id: 0,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct AlbumsPageUIState {
+    pub list: ListState,
+}
+
+impl AlbumsPageUIState {
+    pub fn new() -> Self {
+        Self {
+            list: ListState::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ArtistsPageUIState {
+    pub list: ListState,
+}
+
+impl ArtistsPageUIState {
+    pub fn new() -> Self {
+        Self {
+            list: ListState::default(),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -157,6 +212,10 @@ impl PageState {
         match self {
             PageState::Home { .. } => PageType::Home,
             PageState::Library { .. } => PageType::Library,
+            PageState::Playlists { .. } => PageType::Playlists,
+            PageState::Albums { .. } => PageType::Albums,
+            PageState::Artists { .. } => PageType::Artists,
+            PageState::Playback { .. } => PageType::Playback,
             PageState::Context { .. } => PageType::Context,
             PageState::Search { .. } => PageType::Search,
             PageState::Browse { .. } => PageType::Browse,
@@ -199,6 +258,10 @@ impl PageState {
                     MutableWindowState::List(followed_artist_list)
                 }
             }),
+            Self::Playlists { state } => Some(MutableWindowState::List(&mut state.list)),
+            Self::Albums { state } => Some(MutableWindowState::List(&mut state.list)),
+            Self::Artists { state } => Some(MutableWindowState::List(&mut state.list)),
+            Self::Playback => None,
             Self::Search {
                 state:
                     SearchPageUIState {

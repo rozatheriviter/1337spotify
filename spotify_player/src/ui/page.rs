@@ -4,14 +4,15 @@ use std::{
 };
 
 use chrono_humanize::HumanTime;
-use ratatui::text::Line;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{BarChart, Block};
 
 use crate::{state::Episode, utils::format_duration};
 
 use super::{
-    config, utils, utils::construct_and_render_block, Album, Artist, ArtistFocusState, Borders,
-    BrowsePageUIState, Cell, Constraint, Context, ContextPageUIState, DataReadGuard, Frame, Id,
-    Layout, LibraryFocusState, MutableWindowState, Orientation, PageState, Paragraph,
+    config, playback, utils, utils::construct_and_render_block, Album, Artist, ArtistFocusState,
+    Borders, BrowsePageUIState, Cell, Constraint, Context, ContextPageUIState, DataReadGuard,
+    Frame, Id, Layout, LibraryFocusState, MutableWindowState, Orientation, PageState, Paragraph,
     PlaylistFolderItem, Rect, Row, SearchFocusState, SharedState, Style, Table, Track,
     UIStateGuard,
 };
@@ -522,6 +523,197 @@ pub fn render_library_page(
         &mut page_state.followed_artist_list,
     );
 }
+
+pub fn render_playlists_page(
+    is_active: bool,
+    frame: &mut Frame,
+    state: &SharedState,
+    ui: &mut UIStateGuard,
+    rect: Rect,
+) {
+    let curr_context_uri = state.player.read().playing_context_id().map(|c| c.uri());
+    let data = state.data.read();
+
+    let folder_id = match ui.current_page() {
+        PageState::Playlists { state } => state.folder_id,
+        _ => return,
+    };
+
+    let playlist_rect = construct_and_render_block("Playlists", &ui.theme, Borders::ALL, frame, rect);
+
+    let items = ui
+        .search_filtered_items(&data.user_data.folder_playlists_items(folder_id))
+        .into_iter()
+        .map(|item| match item {
+            PlaylistFolderItem::Playlist(p) => {
+                (p.to_bidi_string(), curr_context_uri == Some(p.id.uri()))
+            }
+            PlaylistFolderItem::Folder(f) => (f.to_bidi_string(), false),
+        })
+        .collect::<Vec<_>>();
+
+    let (playlist_list, n_playlists) = utils::construct_list_widget(&ui.theme, items, is_active);
+
+    let PageState::Playlists { state: page_state } = ui.current_page_mut() else {
+        return;
+    };
+
+    utils::render_list_window(
+        frame,
+        playlist_list,
+        playlist_rect,
+        n_playlists,
+        &mut page_state.list,
+    );
+}
+
+pub fn render_albums_page(
+    is_active: bool,
+    frame: &mut Frame,
+    state: &SharedState,
+    ui: &mut UIStateGuard,
+    rect: Rect,
+) {
+    let curr_context_uri = state.player.read().playing_context_id().map(|c| c.uri());
+    let data = state.data.read();
+
+    let album_rect = construct_and_render_block("Albums", &ui.theme, Borders::ALL, frame, rect);
+
+    let (album_list, n_albums) = utils::construct_list_widget(
+        &ui.theme,
+        ui.search_filtered_items(&data.user_data.saved_albums)
+            .into_iter()
+            .map(|a| (a.to_bidi_string(), curr_context_uri == Some(a.id.uri())))
+            .collect(),
+        is_active,
+    );
+
+    let PageState::Albums { state: page_state } = ui.current_page_mut() else {
+        return;
+    };
+
+    utils::render_list_window(
+        frame,
+        album_list,
+        album_rect,
+        n_albums,
+        &mut page_state.list,
+    );
+}
+
+pub fn render_artists_page(
+    is_active: bool,
+    frame: &mut Frame,
+    state: &SharedState,
+    ui: &mut UIStateGuard,
+    rect: Rect,
+) {
+    let curr_context_uri = state.player.read().playing_context_id().map(|c| c.uri());
+    let data = state.data.read();
+
+    let artist_rect = construct_and_render_block("Artists", &ui.theme, Borders::ALL, frame, rect);
+
+    let (artist_list, n_artists) = utils::construct_list_widget(
+        &ui.theme,
+        ui.search_filtered_items(&data.user_data.followed_artists)
+            .into_iter()
+            .map(|a| (a.to_bidi_string(), curr_context_uri == Some(a.id.uri())))
+            .collect(),
+        is_active,
+    );
+
+    let PageState::Artists { state: page_state } = ui.current_page_mut() else {
+        return;
+    };
+
+    utils::render_list_window(
+        frame,
+        artist_list,
+        artist_rect,
+        n_artists,
+        &mut page_state.list,
+    );
+}
+
+pub fn render_playback_page(
+    _is_active: bool,
+    frame: &mut Frame,
+    state: &SharedState,
+    ui: &mut UIStateGuard,
+    rect: Rect,
+) {
+    let rect = construct_and_render_block("Playback", &ui.theme, Borders::ALL, frame, rect);
+
+    // Split into top (info/cover) and bottom (visualizer)
+    let chunks = Layout::vertical([Constraint::Min(10), Constraint::Percentage(30)]).split(rect);
+    let top_rect = chunks[0];
+    let visualizer_rect = chunks[1];
+
+    // Placeholder for visualizer
+    let visualizer_block = Block::default()
+        .borders(Borders::TOP)
+        .title("Visualizer");
+    frame.render_widget(visualizer_block.clone(), visualizer_rect);
+
+    // Render a simple fake visualizer
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+
+    let data: Vec<(&str, u64)> = (0..20).map(|i| {
+        let val = (time / 100 + i as u128 * 50) % 100;
+        ("", val as u64)
+    }).collect();
+
+    let barchart = BarChart::default()
+        .block(Block::default().borders(Borders::NONE))
+        .data(&data)
+        .bar_width(3)
+        .bar_gap(1)
+        .bar_style(ui.theme.playback_progress_bar())
+        .value_style(ui.theme.playback_progress_bar_unfilled());
+
+    frame.render_widget(barchart, visualizer_block.inner(visualizer_rect));
+
+    let info_rect = top_rect;
+    let player = state.player.read();
+    if let Some(ref playback) = player.playback {
+        if let Some(item) = &playback.item {
+             let mut lines = vec![];
+             match item {
+                 rspotify::model::PlayableItem::Track(t) => {
+                     lines.push(Line::from(vec![Span::styled(format!("Track: {}", t.name), ui.theme.playback_track())]));
+                     lines.push(Line::from(vec![Span::styled(format!("Artist: {}", crate::utils::map_join(&t.artists, |a| &a.name, ", ")), ui.theme.playback_artists())]));
+                     lines.push(Line::from(vec![Span::styled(format!("Album: {}", t.album.name), ui.theme.playback_album())]));
+                 },
+                 rspotify::model::PlayableItem::Episode(e) => {
+                     lines.push(Line::from(vec![Span::styled(format!("Episode: {}", e.name), ui.theme.playback_track())]));
+                     lines.push(Line::from(vec![Span::styled(format!("Show: {}", e.show.name), ui.theme.playback_album())]));
+                 },
+                 _ => {},
+             }
+
+             // Add progress bar
+             if let Some(progress) = player.playback_progress() {
+                 let duration = match item {
+                    rspotify::model::PlayableItem::Track(t) => t.duration,
+                    rspotify::model::PlayableItem::Episode(e) => e.duration,
+                    _ => chrono::Duration::zero(),
+                 };
+                 lines.push(Line::from(format!("{}/{}", crate::utils::format_duration(&progress), crate::utils::format_duration(&duration))));
+             }
+
+             use ratatui::layout::Margin;
+             frame.render_widget(Paragraph::new(lines).block(Block::default().borders(Borders::NONE)), info_rect.inner(Margin { horizontal: 1, vertical: 1 }));
+        } else {
+             frame.render_widget(Paragraph::new("No item playing"), info_rect);
+        }
+    } else {
+        frame.render_widget(Paragraph::new("No playback"), info_rect);
+    }
+}
+
 
 pub fn render_browse_page(
     is_active: bool,

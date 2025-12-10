@@ -107,7 +107,12 @@ fn render_application(frame: &mut Frame, state: &SharedState, ui: &mut UIStateGu
     // render playback window before other popups and windows to ensure nothing is rendered on top
     // of the playback window, which is to avoid "duplicated images" issue
     // See: https://github.com/aome510/spotify-player/issues/498
-    let rect = playback::render_playback_window(frame, state, ui, rect);
+    // Only render playback window if NOT on playback page
+    let rect = if ui.current_page().page_type() != PageType::Playback {
+        playback::render_playback_window(frame, state, ui, rect)
+    } else {
+        rect
+    };
 
     let rect = popup::render_shortcut_help_popup(frame, ui, rect);
 
@@ -128,6 +133,10 @@ fn render_main_layout(
     match page_type {
         PageType::Home => page::render_home_page(frame, ui, rect),
         PageType::Library => page::render_library_page(is_active, frame, state, ui, rect),
+        PageType::Playlists => page::render_playlists_page(is_active, frame, state, ui, rect),
+        PageType::Albums => page::render_albums_page(is_active, frame, state, ui, rect),
+        PageType::Artists => page::render_artists_page(is_active, frame, state, ui, rect),
+        PageType::Playback => page::render_playback_page(is_active, frame, state, ui, rect),
         PageType::Search => page::render_search_page(is_active, frame, state, ui, rect),
         PageType::Context => page::render_context_page(is_active, frame, state, ui, rect),
         PageType::Browse => page::render_browse_page(is_active, frame, state, ui, rect),

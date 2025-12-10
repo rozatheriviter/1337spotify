@@ -189,6 +189,22 @@ impl Default for KeymapConfig {
                     command: Command::LibraryPage,
                 },
                 Keymap {
+                    key_sequence: "g p".into(),
+                    command: Command::PlaylistsPage,
+                },
+                Keymap {
+                    key_sequence: "g a".into(),
+                    command: Command::AlbumsPage,
+                },
+                Keymap {
+                    key_sequence: "g A".into(),
+                    command: Command::ArtistsPage,
+                },
+                Keymap {
+                    key_sequence: "g P".into(),
+                    command: Command::PlaybackPage,
+                },
+                Keymap {
                     key_sequence: "g s".into(),
                     command: Command::SearchPage,
                 },
