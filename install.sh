@@ -47,8 +47,7 @@ echo "Tests completed."
 
 echo "---"
 echo "Next Steps:"
-echo "1. To run the application, navigate to the project root and execute:"
-echo "   ./target/release/spotify_player"
+echo "1. To run the application, type 1337spotify in terminal.
 echo "2. Remember to run the initial authentication step:"
 echo "   ./target/release/spotify_player authenticate"
 echo "3. For more details on installation and features, refer to the README.md."
