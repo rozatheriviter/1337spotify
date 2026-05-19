@@ -1,0 +1,42 @@
+#main-window {
+    background-color: #000000;
+    color: #00FF00;
+    font-family: "Courier New", monospace;
+}
+
+#info-box {
+    padding: 10px;
+    border: 2px solid #333333;
+}
+
+#track-title {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#track-artist {
+    font-size: 12px;
+}
+
+#playback-progress {
+    margin: 10px;
+}
+
+#playback-progress progress, #playback-progress trough {
+    min-height: 10px;
+}
+
+#playback-progress progress {
+    background-color: #00FF00;
+}
+
+#controls-box button {
+    background-color: #333333;
+    color: #FFFFFF;
+    border: 1px solid #666666;
+    padding: 5px 15px;
+}
+
+#controls-box button:hover {
+    background-color: #444444;
+}
