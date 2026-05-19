@@ -139,7 +139,7 @@ fn update_ui(
                     title_label.set_text(&episode.name);
                     artist_label.set_text(&episode.show.name);
                 }
-                _ => {
+                rspotify::model::PlayableItem::Unknown(_) => {
                     title_label.set_text("Unknown Track");
                     artist_label.set_text("Unknown Artist");
                 }
@@ -151,7 +151,7 @@ fn update_ui(
             playback.item.as_ref().and_then(|i| match i {
                 rspotify::model::PlayableItem::Track(t) => Some(t.duration),
                 rspotify::model::PlayableItem::Episode(e) => Some(e.duration),
-                _ => None,
+                rspotify::model::PlayableItem::Unknown(_) => None,
             }),
         ) {
             let fraction = progress.num_milliseconds() as f64 / duration.num_milliseconds() as f64;

@@ -249,16 +249,12 @@ mod parse {
         }
 
         match &node.data {
-            NodeData::Text { contents } => {
-                if should_parse {
-                    s.push_str(&contents.borrow().to_string());
-                }
+            NodeData::Text { contents } if should_parse => {
+                s.push_str(&contents.borrow().to_string());
             }
-            NodeData::Element { ref name, .. } => {
+            NodeData::Element { ref name, .. } if should_parse => {
                 if let expanded_name!(html "br") = name.expanded() {
-                    if should_parse {
-                        s.push('\n');
-                    }
+                    s.push('\n');
                 }
             }
             _ => {}
