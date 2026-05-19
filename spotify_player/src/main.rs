@@ -179,6 +179,7 @@ async fn start_app(state: &state::SharedState, args: &clap::ArgMatches) -> Resul
     if !state.is_daemon {
         // spawn tasks needed for running the application UI
 
+        #[allow(unused_mut)]
         let mut run_tui = true;
 
         #[cfg(feature = "gtk")]

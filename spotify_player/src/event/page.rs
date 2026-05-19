@@ -27,15 +27,16 @@ pub fn handle_key_sequence_for_page(
             PageType::Context => handle_command_for_context_page(command, client_pub, ui, state),
             PageType::Browse => handle_command_for_browse_page(command, client_pub, ui, state),
             // lyrics page doesn't support any commands
-            PageType::Lyrics => Ok(false),
+            PageType::Lyrics | PageType::Playback => Ok(false),
             PageType::Queue => Ok(handle_command_for_queue_page(command, ui)),
             PageType::CommandHelp => Ok(handle_command_for_command_help_page(command, ui)),
             PageType::Playlists => {
                 handle_command_for_playlists_page(command, client_pub, ui, state)
             }
             PageType::Albums => handle_command_for_albums_page(command, client_pub, ui, state),
-            PageType::Artists => handle_command_for_artists_page(command, client_pub, ui, state),
-            PageType::Playback => Ok(false),
+            PageType::Artists => {
+                Ok(handle_command_for_artists_page(command, client_pub, ui, state))
+            }
         },
         Some(CommandOrAction::Action(action, ActionTarget::SelectedItem)) => match page_type {
             PageType::Search => anyhow::bail!("page search type should already be handled!"),
@@ -177,12 +178,12 @@ fn handle_command_for_library_page(
         // Sort albums alphabetically
         data.user_data
             .saved_albums
-            .sort_by(|x, y| x.name.to_lowercase().cmp(&y.name.to_lowercase()));
+            .sort_by_key(|x| x.name.to_lowercase());
 
         // Sort artists alphabetically
         data.user_data
             .followed_artists
-            .sort_by(|x, y| x.name.to_lowercase().cmp(&y.name.to_lowercase()));
+            .sort_by_key(|x| x.name.to_lowercase());
     }
 
     if command == Command::SortLibraryByRecent {
@@ -211,7 +212,7 @@ fn handle_command_for_library_page(
         // Sort albums by recent addition
         data.user_data
             .saved_albums
-            .sort_by(|a, b| b.added_at.cmp(&a.added_at));
+            .sort_by_key(|a| std::cmp::Reverse(a.added_at));
     }
 
     match focus_state {
@@ -276,7 +277,7 @@ fn handle_action_for_playlists_page(
 
 fn handle_command_for_playlists_page(
     command: Command,
-    client_pub: &flume::Sender<ClientRequest>,
+    _client_pub: &flume::Sender<ClientRequest>,
     ui: &mut UIStateGuard,
     state: &SharedState,
 ) -> Result<bool> {
@@ -362,19 +363,19 @@ fn handle_command_for_artists_page(
     _client_pub: &flume::Sender<ClientRequest>,
     ui: &mut UIStateGuard,
     state: &SharedState,
-) -> Result<bool> {
+) -> bool {
     if command == Command::Search {
         ui.new_search_popup();
-        return Ok(true);
+        return true;
     }
 
     let data = state.data.read();
-    Ok(window::handle_command_for_artist_list_window(
+    window::handle_command_for_artist_list_window(
         command,
         &ui.search_filtered_items(&data.user_data.followed_artists),
         &data,
         ui,
-    ))
+    )
 }
 
 fn handle_key_sequence_for_search_page(

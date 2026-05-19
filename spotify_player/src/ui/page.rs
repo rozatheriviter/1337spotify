@@ -10,7 +10,7 @@ use ratatui::widgets::{BarChart, Block};
 use crate::{state::Episode, utils::format_duration};
 
 use super::{
-    config, playback, utils, utils::construct_and_render_block, Album, Artist, ArtistFocusState,
+    config, utils, utils::construct_and_render_block, Album, Artist, ArtistFocusState,
     Borders, BrowsePageUIState, Cell, Constraint, Context, ContextPageUIState, DataReadGuard,
     Frame, Id, Layout, LibraryFocusState, MutableWindowState, Orientation, PageState, Paragraph,
     PlaylistFolderItem, Rect, Row, SearchFocusState, SharedState, Style, Table, Track,
@@ -664,7 +664,7 @@ pub fn render_playback_page(
     let data: Vec<(&str, u64)> = (0..n_bars)
         .map(|i| {
             // Create a more organic wave pattern using sine waves
-            let x = i as f64;
+            let x = f64::from(i);
             let t = time as f64 / 100.0;
 
             // Combine multiple sine waves for a more complex pattern
@@ -673,7 +673,7 @@ pub fn render_playback_page(
             let wave3 = ((x * 0.1 + t * 0.2).sin() + 1.0) * 5.0;
 
             // Add some noise based on index to simulate frequency bands
-            let noise = ((i * 7) % 13) as f64;
+            let noise = f64::from((i * 7) % 13);
 
             let val = (wave1 + wave2 + wave3 + noise) as u64;
             ("", val.min(100))
@@ -723,7 +723,7 @@ pub fn render_playback_page(
                         ui.theme.playback_album(),
                     )]));
                 }
-                _ => {}
+                rspotify::model::PlayableItem::Unknown(_) => {}
             }
 
             // Add progress bar
@@ -731,7 +731,7 @@ pub fn render_playback_page(
                 let duration = match item {
                     rspotify::model::PlayableItem::Track(t) => t.duration,
                     rspotify::model::PlayableItem::Episode(e) => e.duration,
-                    _ => chrono::Duration::zero(),
+                    rspotify::model::PlayableItem::Unknown(_) => chrono::Duration::zero(),
                 };
                 lines.push(Line::from(format!(
                     "{}/{}",
@@ -740,10 +740,9 @@ pub fn render_playback_page(
                 )));
             }
 
-            use ratatui::layout::Margin;
             frame.render_widget(
                 Paragraph::new(lines).block(Block::default().borders(Borders::NONE)),
-                info_rect.inner(Margin {
+                info_rect.inner(ratatui::layout::Margin {
                     horizontal: 1,
                     vertical: 1,
                 }),

@@ -12,18 +12,17 @@ cd "$SCRIPT_DIR"
 
 # --- 1. Install System Dependencies ---
 
-echo "Installing required system dependencies for Pop!_OS (Ubuntu/Debian)..."
+echo "Installing required system dependencies for Fedora..."
 # Dependencies are for OpenSSL, ALSA (audio backend), DBus (media control),
-# and XCB (windowing/graphics dependencies).
-sudo apt update
-sudo apt install -y \
-  pkg-config \
-  libssl-dev \
-  libasound2-dev \
-  libdbus-1-dev \
-  libxcb-shape0-dev \
-  libxcb-xfixes0-dev \
-  libgtk-4-dev \
+# XCB (windowing/graphics dependencies), and GTK4.
+sudo dnf check-update || true
+sudo dnf install -y \
+  pkgconf-pkg-config \
+  openssl-devel \
+  alsa-lib-devel \
+  dbus-devel \
+  libxcb-devel \
+  gtk4-devel \
   git
 
 echo "System dependencies installed successfully."

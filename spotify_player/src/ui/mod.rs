@@ -110,10 +110,10 @@ fn render_application(frame: &mut Frame, state: &SharedState, ui: &mut UIStateGu
     // of the playback window, which is to avoid "duplicated images" issue
     // See: https://github.com/aome510/spotify-player/issues/498
     // Only render playback window if NOT on playback page
-    let rect = if ui.current_page().page_type() != PageType::Playback {
-        playback::render_playback_window(frame, state, ui, rect)
-    } else {
+    let rect = if ui.current_page().page_type() == PageType::Playback {
         rect
+    } else {
+        playback::render_playback_window(frame, state, ui, rect)
     };
 
     let rect = popup::render_shortcut_help_popup(frame, ui, rect);

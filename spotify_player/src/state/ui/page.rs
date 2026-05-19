@@ -215,7 +215,7 @@ impl PageState {
             PageState::Playlists { .. } => PageType::Playlists,
             PageState::Albums { .. } => PageType::Albums,
             PageState::Artists { .. } => PageType::Artists,
-            PageState::Playback { .. } => PageType::Playback,
+            PageState::Playback => PageType::Playback,
             PageState::Context { .. } => PageType::Context,
             PageState::Search { .. } => PageType::Search,
             PageState::Browse { .. } => PageType::Browse,
@@ -261,7 +261,7 @@ impl PageState {
             Self::Playlists { state } => Some(MutableWindowState::List(&mut state.list)),
             Self::Albums { state } => Some(MutableWindowState::List(&mut state.list)),
             Self::Artists { state } => Some(MutableWindowState::List(&mut state.list)),
-            Self::Playback => None,
+            Self::Playback | Self::Lyrics { .. } => None,
             Self::Search {
                 state:
                     SearchPageUIState {
@@ -311,7 +311,6 @@ impl PageState {
                     Some(MutableWindowState::List(state))
                 }
             },
-            Self::Lyrics { .. } => None,
             Self::CommandHelp { scroll_offset } | Self::Queue { scroll_offset } => {
                 Some(MutableWindowState::Scroll(scroll_offset))
             }
