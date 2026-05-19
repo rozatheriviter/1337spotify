@@ -17,8 +17,8 @@ use super::{
     UIStateGuard,
 };
 use crate::state::BidiDisplay;
-use crate::ui::utils::to_bidi_string;
 use crate::state::HOME_PAGE_OPTIONS;
+use crate::ui::utils::to_bidi_string;
 
 const COMMAND_TABLE_CONSTRAINTS: [Constraint; 3] = [
     Constraint::Percentage(25),
@@ -539,7 +539,8 @@ pub fn render_playlists_page(
         _ => return,
     };
 
-    let playlist_rect = construct_and_render_block("Playlists", &ui.theme, Borders::ALL, frame, rect);
+    let playlist_rect =
+        construct_and_render_block("Playlists", &ui.theme, Borders::ALL, frame, rect);
 
     let items = ui
         .search_filtered_items(&data.user_data.folder_playlists_items(folder_id))
@@ -650,9 +651,7 @@ pub fn render_playback_page(
     let visualizer_rect = chunks[1];
 
     // Placeholder for visualizer
-    let visualizer_block = Block::default()
-        .borders(Borders::TOP)
-        .title("Visualizer");
+    let visualizer_block = Block::default().borders(Borders::TOP).title("Visualizer");
     frame.render_widget(visualizer_block.clone(), visualizer_rect);
 
     // Render a simple fake visualizer
@@ -695,40 +694,67 @@ pub fn render_playback_page(
     let player = state.player.read();
     if let Some(ref playback) = player.playback {
         if let Some(item) = &playback.item {
-             let mut lines = vec![];
-             match item {
-                 rspotify::model::PlayableItem::Track(t) => {
-                     lines.push(Line::from(vec![Span::styled(format!("Track: {}", t.name), ui.theme.playback_track())]));
-                     lines.push(Line::from(vec![Span::styled(format!("Artist: {}", crate::utils::map_join(&t.artists, |a| &a.name, ", ")), ui.theme.playback_artists())]));
-                     lines.push(Line::from(vec![Span::styled(format!("Album: {}", t.album.name), ui.theme.playback_album())]));
-                 },
-                 rspotify::model::PlayableItem::Episode(e) => {
-                     lines.push(Line::from(vec![Span::styled(format!("Episode: {}", e.name), ui.theme.playback_track())]));
-                     lines.push(Line::from(vec![Span::styled(format!("Show: {}", e.show.name), ui.theme.playback_album())]));
-                 },
-                 _ => {},
-             }
+            let mut lines = vec![];
+            match item {
+                rspotify::model::PlayableItem::Track(t) => {
+                    lines.push(Line::from(vec![Span::styled(
+                        format!("Track: {}", t.name),
+                        ui.theme.playback_track(),
+                    )]));
+                    lines.push(Line::from(vec![Span::styled(
+                        format!(
+                            "Artist: {}",
+                            crate::utils::map_join(&t.artists, |a| &a.name, ", ")
+                        ),
+                        ui.theme.playback_artists(),
+                    )]));
+                    lines.push(Line::from(vec![Span::styled(
+                        format!("Album: {}", t.album.name),
+                        ui.theme.playback_album(),
+                    )]));
+                }
+                rspotify::model::PlayableItem::Episode(e) => {
+                    lines.push(Line::from(vec![Span::styled(
+                        format!("Episode: {}", e.name),
+                        ui.theme.playback_track(),
+                    )]));
+                    lines.push(Line::from(vec![Span::styled(
+                        format!("Show: {}", e.show.name),
+                        ui.theme.playback_album(),
+                    )]));
+                }
+                _ => {}
+            }
 
-             // Add progress bar
-             if let Some(progress) = player.playback_progress() {
-                 let duration = match item {
+            // Add progress bar
+            if let Some(progress) = player.playback_progress() {
+                let duration = match item {
                     rspotify::model::PlayableItem::Track(t) => t.duration,
                     rspotify::model::PlayableItem::Episode(e) => e.duration,
                     _ => chrono::Duration::zero(),
-                 };
-                 lines.push(Line::from(format!("{}/{}", crate::utils::format_duration(&progress), crate::utils::format_duration(&duration))));
-             }
+                };
+                lines.push(Line::from(format!(
+                    "{}/{}",
+                    crate::utils::format_duration(&progress),
+                    crate::utils::format_duration(&duration)
+                )));
+            }
 
-             use ratatui::layout::Margin;
-             frame.render_widget(Paragraph::new(lines).block(Block::default().borders(Borders::NONE)), info_rect.inner(Margin { horizontal: 1, vertical: 1 }));
+            use ratatui::layout::Margin;
+            frame.render_widget(
+                Paragraph::new(lines).block(Block::default().borders(Borders::NONE)),
+                info_rect.inner(Margin {
+                    horizontal: 1,
+                    vertical: 1,
+                }),
+            );
         } else {
-             frame.render_widget(Paragraph::new("No item playing"), info_rect);
+            frame.render_widget(Paragraph::new("No item playing"), info_rect);
         }
     } else {
         frame.render_widget(Paragraph::new("No playback"), info_rect);
     }
 }
-
 
 pub fn render_browse_page(
     is_active: bool,

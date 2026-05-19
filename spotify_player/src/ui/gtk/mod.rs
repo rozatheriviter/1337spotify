@@ -1,8 +1,8 @@
 use crate::{client::ClientRequest, state::SharedState};
-use gtk4 as gtk;
-use gtk::prelude::*;
-use std::sync::Arc;
 use glib;
+use gtk::prelude::*;
+use gtk4 as gtk;
+use std::sync::Arc;
 
 const STYLE: &str = include_str!("style.css");
 
@@ -27,7 +27,11 @@ pub fn run(state: &SharedState, client_pub: flume::Sender<ClientRequest>) {
     app.run_with_args::<&str>(&[]);
 }
 
-fn build_ui(app: &gtk::Application, state: &SharedState, client_pub: &flume::Sender<ClientRequest>) {
+fn build_ui(
+    app: &gtk::Application,
+    state: &SharedState,
+    client_pub: &flume::Sender<ClientRequest>,
+) {
     let window = gtk::ApplicationWindow::builder()
         .application(app)
         .title("Spotify Player (Winamp Edition)")
@@ -74,23 +78,35 @@ fn build_ui(app: &gtk::Application, state: &SharedState, client_pub: &flume::Sen
     // Connect button signals
     let cp = client_pub.clone();
     prev_button.connect_clicked(move |_| {
-        let _ = cp.send(ClientRequest::Player(crate::client::PlayerRequest::PreviousTrack));
+        let _ = cp.send(ClientRequest::Player(
+            crate::client::PlayerRequest::PreviousTrack,
+        ));
     });
 
     let cp = client_pub.clone();
     play_pause_button.connect_clicked(move |_| {
-        let _ = cp.send(ClientRequest::Player(crate::client::PlayerRequest::ResumePause));
+        let _ = cp.send(ClientRequest::Player(
+            crate::client::PlayerRequest::ResumePause,
+        ));
     });
 
     let cp = client_pub.clone();
     next_button.connect_clicked(move |_| {
-        let _ = cp.send(ClientRequest::Player(crate::client::PlayerRequest::NextTrack));
+        let _ = cp.send(ClientRequest::Player(
+            crate::client::PlayerRequest::NextTrack,
+        ));
     });
 
     // Update UI state
     let state_clone = state.clone();
     glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
-        update_ui(&state_clone, &title_label, &artist_label, &progress_bar, &play_pause_button);
+        update_ui(
+            &state_clone,
+            &title_label,
+            &artist_label,
+            &progress_bar,
+            &play_pause_button,
+        );
         glib::ControlFlow::Continue
     });
 
@@ -110,7 +126,14 @@ fn update_ui(
             match item {
                 rspotify::model::PlayableItem::Track(track) => {
                     title_label.set_text(&track.name);
-                    artist_label.set_text(&track.artists.iter().map(|a| a.name.as_str()).collect::<Vec<_>>().join(", "));
+                    artist_label.set_text(
+                        &track
+                            .artists
+                            .iter()
+                            .map(|a| a.name.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                    );
                 }
                 rspotify::model::PlayableItem::Episode(episode) => {
                     title_label.set_text(&episode.name);
@@ -123,15 +146,16 @@ fn update_ui(
             }
         }
 
-        if let (Some(progress), Some(duration)) = (playback.progress, playback.item.as_ref().and_then(|i| {
-            match i {
+        if let (Some(progress), Some(duration)) = (
+            playback.progress,
+            playback.item.as_ref().and_then(|i| match i {
                 rspotify::model::PlayableItem::Track(t) => Some(t.duration),
                 rspotify::model::PlayableItem::Episode(e) => Some(e.duration),
                 _ => None,
-            }
-        })) {
-             let fraction = progress.num_milliseconds() as f64 / duration.num_milliseconds() as f64;
-             progress_bar.set_fraction(fraction);
+            }),
+        ) {
+            let fraction = progress.num_milliseconds() as f64 / duration.num_milliseconds() as f64;
+            progress_bar.set_fraction(fraction);
         }
 
         if playback.is_playing {

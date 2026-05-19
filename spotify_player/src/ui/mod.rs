@@ -24,11 +24,11 @@ use crate::state::ImageRenderInfo;
 
 type Terminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stdout>>;
 
+#[cfg(feature = "gtk")]
+pub mod gtk;
 mod page;
 mod playback;
 mod popup;
-#[cfg(feature = "gtk")]
-pub mod gtk;
 pub mod single_line_input;
 pub mod utils;
 
