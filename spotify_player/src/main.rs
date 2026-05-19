@@ -78,7 +78,7 @@ fn init_logging(log_folder: &std::path::Path) -> Result<()> {
 }
 
 #[tokio::main]
-async fn start_app(state: &state::SharedState) -> Result<()> {
+async fn start_app(state: &state::SharedState, args: &clap::ArgMatches) -> Result<()> {
     let configs = config::get_config();
 
     if !state.is_daemon {
@@ -133,6 +133,11 @@ async fn start_app(state: &state::SharedState) -> Result<()> {
     // initialize Spotify-related stuff
     init_spotify(&client_pub, &client, state).context("Failed to initialize the Spotify data")?;
 
+    let ui_type = args
+        .get_one::<String>("ui-type")
+        .cloned()
+        .unwrap_or_else(|| "tui".to_string());
+
     // Spawn application's tasks
     let mut tasks = Vec::new();
 
@@ -174,20 +179,34 @@ async fn start_app(state: &state::SharedState) -> Result<()> {
     if !state.is_daemon {
         // spawn tasks needed for running the application UI
 
-        // terminal event handler task
-        tokio::task::spawn_blocking({
-            let client_pub = client_pub.clone();
-            let state = state.clone();
-            move || {
-                event::start_event_handler(&state, &client_pub);
-            }
-        });
+        let mut run_tui = true;
 
-        // application UI task
-        tokio::task::spawn_blocking({
-            let state = state.clone();
-            move || ui::run(&state)
-        });
+        #[cfg(feature = "gtk")]
+        if ui_type == "gtk" {
+            run_tui = false;
+            tokio::task::spawn_blocking({
+                let state = state.clone();
+                let client_pub = client_pub.clone();
+                move || ui::gtk::run(&state, client_pub)
+            });
+        }
+
+        if run_tui {
+            // terminal event handler task
+            tokio::task::spawn_blocking({
+                let client_pub = client_pub.clone();
+                let state = state.clone();
+                move || {
+                    event::start_event_handler(&state, &client_pub);
+                }
+            });
+
+            // application UI task
+            tokio::task::spawn_blocking({
+                let state = state.clone();
+                move || ui::run(&state)
+            });
+        }
     }
 
     #[cfg(feature = "media-control")]
@@ -310,7 +329,7 @@ fn main() -> Result<()> {
             }
 
             let state = std::sync::Arc::new(state::State::new(is_daemon));
-            start_app(&state)
+            start_app(&state, &args)
         }
         Some((cmd, args)) => cli::handle_cli_subcommand(cmd, args),
     }

@@ -27,6 +27,8 @@ type Terminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::St
 mod page;
 mod playback;
 mod popup;
+#[cfg(feature = "gtk")]
+pub mod gtk;
 pub mod single_line_input;
 pub mod utils;
 

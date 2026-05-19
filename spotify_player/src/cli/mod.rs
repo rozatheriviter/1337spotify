@@ -198,6 +198,15 @@ pub fn init_cli() -> anyhow::Result<clap::Command> {
                 .value_name("FOLDER")
                 .default_value(default_cache_folder.into_os_string())
                 .help("Path to the application's cache folder"),
+        )
+        .arg(
+            clap::Arg::new("ui-type")
+                .short('u')
+                .long("ui-type")
+                .value_name("UI_TYPE")
+                .value_parser(["tui", "gtk"])
+                .default_value("tui")
+                .help("Application UI type"),
         );
 
     #[cfg(feature = "daemon")]
